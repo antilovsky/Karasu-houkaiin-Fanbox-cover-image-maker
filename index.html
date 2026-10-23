@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b0909" />
+  <meta name="description" content="Karasu Houkaiin · Quick Image Lab — 2560×1344 快速图片编辑器，支持裁切、明度/饱和度/高斯模糊调整、Otsutome 字体 Overlay 混合模式、可选光晕颜色与 PNG/PSD 导出。" />
+  <title>Karasu Houkaiin · Quick Image Lab</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230c0908'/%3E%3Cpath d='M17 47V17h7v12l11-12h9L30 30l15 17h-9L24 34v13h-7Z' fill='%23f2eae0'/%3E%3Cpath d='M47 17h5v30h-5z' fill='%23f04d35'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="app" id="app">
+    <header class="topbar">
+      <a class="brand" href="./" aria-label="Karasu Houkaiin Quick Image Lab 首页">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 36 36" fill="none">
+            <path d="M7 29V7h4.4v8.2L20 7h5.6L16 15.9l9.8 13.1h-5.5l-7.3-10.1-1.6 2V29H7Z" fill="currentColor"/>
+            <path d="M27.5 7H31v22h-3.5V7Z" fill="#ef4b38"/>
+          </svg>
+        </span>
+        <span class="brand-type">
+          <strong>Karasu Houkaiin</strong>
+          <span>QUICK IMAGE LAB</span>
+        </span>
+      </a>
+
+      <div class="topbar-center" aria-hidden="true">
+        <span class="topbar-rule"></span>
+        <span class="topbar-caption">ARTWORK → 2560 × 1344</span>
+        <span class="topbar-rule"></span>
+      </div>
+
+      <div class="top-actions">
+        <input id="fileInput" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/avif" hidden />
+        <button class="btn btn-ghost" id="importBtn" type="button">
+          <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 13V3m0 0L6.4 6.6M10 3l3.6 3.6M3.5 12.5v2A2.5 2.5 0 0 0 6 17h8a2.5 2.5 0 0 0 2.5-2.5v-2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>导入图片</span>
+        </button>
+        <span class="top-actions-divider" aria-hidden="true"></span>
+        <button class="btn btn-png" id="exportPngBtn" type="button">
+          <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 3v10m0 0 3.8-3.8M10 13 6.2 9.2M3.5 14v1.5A1.5 1.5 0 0 0 5 17h10a1.5 1.5 0 0 0 1.5-1.5V14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>PNG</span>
+        </button>
+        <button class="btn btn-psd" id="exportPsdBtn" type="button">
+          <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 3.5h8.2L16 7.3v9.2H4V3.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M12 3.5v4h4M7 13l1.8-4.5L10.7 13M7.6 11.5h2.6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>PSD</span>
+        </button>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <section class="stage-panel" aria-label="图片预览">
+        <div class="stage-bar">
+          <div class="file-summary">
+            <span class="file-index">ASSET 01</span>
+            <span class="file-name" id="fileName">sample-artwork.jpg</span>
+            <span class="file-meta" id="fileMeta">2275 × 1280 · JPEG</span>
+          </div>
+          <div class="stage-actions">
+            <button class="mini-btn" id="cropBtn" type="button">
+              <svg viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M5 1.75V13h11.25M1.75 5H13v11.25" stroke="currentColor" stroke-width="1.35" stroke-linecap="round"/></svg>
+              重新裁切
+            </button>
+            <button class="mini-btn" id="compareBtn" type="button" aria-label="按住查看原图">
+              <svg viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M9 2.5v13M2.5 9h13" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="9" cy="9" r="6.25" stroke="currentColor" stroke-width="1.3"/></svg>
+              <span>按住对比</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="stage-wrap" id="stageWrap">
+          <div class="stage-glow" aria-hidden="true"></div>
+          <div class="canvas-shell" id="canvasShell">
+            <canvas id="previewCanvas" width="1280" height="672" aria-label="2560 × 1344 图片预览"></canvas>
+            <div class="text-overlay" id="textOverlay" aria-label="可拖拽文字图层"></div>
+            <span class="frame-corner tl" aria-hidden="true"></span>
+            <span class="frame-corner tr" aria-hidden="true"></span>
+            <span class="frame-corner bl" aria-hidden="true"></span>
+            <span class="frame-corner br" aria-hidden="true"></span>
+            <div class="canvas-loading" id="canvasLoading">
+              <span class="spinner"></span>
+              <span>正在显影</span>
+            </div>
+          </div>
+
+          <div class="drop-overlay" id="dropOverlay" aria-hidden="true">
+            <div class="drop-inner">
+              <span class="drop-icon">
+                <svg viewBox="0 0 48 48" fill="none"><path d="M24 34V12m0 0-8 8m8-8 8 8M9 32v4a4 4 0 0 0 4 4h22a4 4 0 0 0 4-4v-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </span>
+              <strong>松手，投放图片</strong>
+              <span>PNG / JPG / WEBP</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="stage-footer">
+          <div class="stage-stat">
+            <span class="live-dot" aria-hidden="true"></span>
+            <span>输出</span>
+            <strong>2560 × 1344</strong>
+            <span class="stage-stat-sep">/</span>
+            <span>3.44 MP</span>
+          </div>
+          <div class="stage-tip">
+            <span class="tip-key">拖拽</span>
+            在画面上直接调整文字位置
+          </div>
+          <div class="stage-format">
+            <span>PNG</span>
+            <span class="format-sep">/</span>
+            <span>PSD</span>
+          </div>
+        </div>
+      </section>
+
+      <aside class="inspector" aria-label="编辑控制面板">
+        <div class="inspector-head">
+          <div>
+            <span class="eyebrow">EDIT CONTROLS</span>
+            <h1>编辑台</h1>
+          </div>
+          <div class="save-state" id="saveState">
+            <span class="live-dot" aria-hidden="true"></span>
+            <span>LIVE</span>
+          </div>
+        </div>
+
+        <div class="inspector-scroll" id="inspectorScroll">
+          <section class="panel-section canvas-section">
+            <div class="section-heading">
+              <span class="section-no">01</span>
+              <div>
+                <h2>画布</h2>
+                <p>FRAME &amp; CROP</p>
+              </div>
+            </div>
+            <div class="canvas-card">
+              <div class="ratio-preview" aria-hidden="true">
+                <span></span>
+              </div>
+              <div class="canvas-card-copy">
+                <strong>2560 <span>×</span> 1344</strong>
+                <p id="cropStateText">整个画面 · 无裁切</p>
+              </div>
+              <button class="icon-text-btn" id="cropBtn2" type="button">
+                裁切
+                <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m6 3 5 5-5 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+            </div>
+          </section>
+
+          <section class="panel-section">
+            <div class="section-heading with-action">
+              <span class="section-no">02</span>
+              <div>
+                <h2>影像处理</h2>
+                <p>IMAGE TREATMENTS</p>
+              </div>
+              <button class="text-action" id="resetAdjustBtn" type="button">重置</button>
+            </div>
+
+            <div class="adjust-stack">
+              <div class="adjust-item" data-adjust="brightness">
+                <div class="adjust-top">
+                  <label class="adjust-name" for="brightnessToggle">
+                    <span class="adjust-icon">
+                      <svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="3.5" stroke="currentColor" stroke-width="1.4"/><path d="M10 1.5v2M10 16.5v2M1.5 10h2M16.5 10h2M4 4l1.5 1.5M14.5 14.5 16 16M16 4l-1.5 1.5M5.5 14.5 4 16" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+                    </span>
+                    <span>
+                      <strong>明度</strong>
+                      <em>Brightness</em>
+                    </span>
+                  </label>
+                  <div class="adjust-readout"><span id="brightnessReadout">−20</span></div>
+                  <label class="switch" aria-label="启用明度调整">
+                    <input type="checkbox" id="brightnessToggle" />
+                    <span class="switch-track"></span>
+                  </label>
+                </div>
+                <div class="range-row">
+                  <span class="range-bound">−100</span>
+                  <input type="range" id="brightnessRange" min="-100" max="100" step="1" value="-20" aria-label="明度数值" />
+                  <span class="range-bound">+100</span>
+                </div>
+              </div>
+
+              <div class="adjust-item" data-adjust="saturation">
+                <div class="adjust-top">
+                  <label class="adjust-name" for="saturationToggle">
+                    <span class="adjust-icon">
+                      <svg viewBox="0 0 20 20" fill="none"><path d="M10 2.2c2.7 3.2 5.4 6.2 5.4 9.2a5.4 5.4 0 1 1-10.8 0c0-3 2.7-6 5.4-9.2Z" stroke="currentColor" stroke-width="1.4"/><path d="M7.5 12.2a2.6 2.6 0 0 0 2.5 2.6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+                    </span>
+                    <span>
+                      <strong>饱和度</strong>
+                      <em>Saturation</em>
+                    </span>
+                  </label>
+                  <div class="adjust-readout"><span id="saturationReadout">−40</span></div>
+                  <label class="switch" aria-label="启用饱和度调整">
+                    <input type="checkbox" id="saturationToggle" />
+                    <span class="switch-track"></span>
+                  </label>
+                </div>
+                <div class="range-row">
+                  <span class="range-bound">−100</span>
+                  <input type="range" id="saturationRange" min="-100" max="100" step="1" value="-40" aria-label="饱和度数值" />
+                  <span class="range-bound">+100</span>
+                </div>
+              </div>
+
+              <div class="adjust-item" data-adjust="blur">
+                <div class="adjust-top">
+                  <label class="adjust-name" for="blurToggle">
+                    <span class="adjust-icon">
+                      <svg viewBox="0 0 20 20" fill="none"><circle cx="8" cy="8" r="4.5" stroke="currentColor" stroke-width="1.4"/><path d="M11.5 11.5 17 17" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M6.2 8h3.6M8 6.2v3.6" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" opacity=".6"/></svg>
+                    </span>
+                    <span>
+                      <strong>高斯模糊</strong>
+                      <em>Gaussian Blur</em>
+                    </span>
+                  </label>
+                  <div class="adjust-readout"><span id="blurReadout">50</span><small>px</small></div>
+                  <label class="switch" aria-label="启用高斯模糊">
+                    <input type="checkbox" id="blurToggle" />
+                    <span class="switch-track"></span>
+                  </label>
+                </div>
+                <div class="range-row">
+                  <span class="range-bound">0</span>
+                  <input type="range" id="blurRange" min="0" max="100" step="1" value="50" aria-label="高斯模糊半径" />
+                  <span class="range-bound">100</span>
+                </div>
+              </div>
+            </div>
+            <p class="section-hint">三项处理可分别开启，并会按顺序叠加。处理值已预设为你要求的效果。</p>
+          </section>
+
+          <section class="panel-section text-section">
+            <div class="section-heading with-action">
+              <span class="section-no">03</span>
+              <div>
+                <h2>文字叠加</h2>
+                <p>WHITE TYPE OVERLAY</p>
+              </div>
+              <div class="text-head-actions">
+                <button class="text-action" id="showAllTextBtn" type="button">全显</button>
+                <span class="tiny-sep">/</span>
+                <button class="text-action" id="hideAllTextBtn" type="button">全隐</button>
+              </div>
+            </div>
+
+            <div class="type-note">
+              <span class="type-aa">Aa</span>
+              <p>白色文字使用 <strong>Overlay / 叠加</strong>（オーバーレイ）图层混合模式。可在预览中直接拖动文字微调位置。</p>
+            </div>
+
+            <div class="stack-option is-active" id="doubleOverlayRow">
+              <span class="stack-glyph" aria-hidden="true">×2</span>
+              <div class="stack-copy">
+                <strong>双层叠加</strong>
+                <span>复制全部文字层，再叠加一次以增强效果</span>
+              </div>
+              <label class="switch" aria-label="启用双层叠加">
+                <input type="checkbox" id="doubleOverlayToggle" checked />
+                <span class="switch-track"></span>
+              </label>
+            </div>
+
+            <div class="layer-list" id="layerList"></div>
+
+            <div class="glow-card" id="glowCard">
+              <div class="glow-row">
+                <div class="glow-copy">
+                  <strong>文字光晕</strong>
+                  <span>让白色文字从画面中浮起</span>
+                </div>
+                <label class="switch" aria-label="启用文字光晕">
+                  <input type="checkbox" id="glowToggle" checked />
+                  <span class="switch-track"></span>
+                </label>
+              </div>
+              <div class="glow-colors" id="glowColors">
+                <span class="glow-colors-label">光晕颜色 <em>GLOW</em></span>
+                <div class="glow-swatches" id="glowSwatches" role="group" aria-label="光晕颜色预设">
+                  <button class="glow-swatch is-active" type="button" data-color="#f4371c" style="--swatch:#f4371c" aria-label="红色光晕" aria-pressed="true"></button>
+                  <button class="glow-swatch" type="button" data-color="#ffc857" style="--swatch:#ffc857" aria-label="金色光晕" aria-pressed="false"></button>
+                  <button class="glow-swatch" type="button" data-color="#67d9ff" style="--swatch:#67d9ff" aria-label="冰蓝光晕" aria-pressed="false"></button>
+                  <button class="glow-swatch" type="button" data-color="#ff77c8" style="--swatch:#ff77c8" aria-label="粉色光晕" aria-pressed="false"></button>
+                  <button class="glow-swatch" type="button" data-color="#ffffff" style="--swatch:#ffffff" aria-label="白色光晕" aria-pressed="false"></button>
+                </div>
+                <label class="glow-picker" title="自定义光晕颜色">
+                  <input id="glowColorInput" type="color" value="#f4371c" aria-label="自定义光晕颜色" />
+                  <span aria-hidden="true"></span>
+                </label>
+                <span class="glow-hex" id="glowHex">#F4371C</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel-section export-section">
+            <div class="section-heading">
+              <span class="section-no">04</span>
+              <div>
+                <h2>导出</h2>
+                <p>DELIVERABLES</p>
+              </div>
+            </div>
+            <div class="export-pair">
+              <button class="export-tile" id="exportPngTile" type="button">
+                <span class="export-tile-icon">PNG</span>
+                <span><strong>导出 PNG</strong><small>2560 × 1344 · 无损</small></span>
+              </button>
+              <button class="export-tile" id="exportPsdTile" type="button">
+                <span class="export-tile-icon psd">PSD</span>
+                <span><strong>导出 PSD</strong><small>背景 + 可编辑文字层</small></span>
+              </button>
+            </div>
+            <div class="font-credit">
+              <span>
+                <strong>Otsutome Font Bold</strong>
+                由 何某亭 设计 · OFL 1.1
+              </span>
+              <a href="./assets/fonts/OtsutomeFont-Bold.ttf" download="OtsutomeFont-Bold.ttf">下载字体</a>
+            </div>
+          </section>
+        </div>
+
+        <div class="inspector-foot">
+          <span>KARASU HOUKAIIN / R01</span>
+          <span class="foot-note">所有渲染均在浏览器本地完成</span>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <div class="modal crop-modal" id="cropModal" aria-hidden="true">
+    <div class="crop-dialog" role="dialog" aria-modal="true" aria-labelledby="cropTitle">
+      <header class="crop-head">
+        <div class="crop-heading">
+          <button class="round-btn" id="cropCloseBtn" type="button" aria-label="关闭裁切">
+            <svg viewBox="0 0 20 20" fill="none"><path d="m5 5 10 10M15 5 5 15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </button>
+          <div>
+            <span class="eyebrow">CROP / SELECT ANY AREA</span>
+            <h2 id="cropTitle">选定画面范围</h2>
+          </div>
+        </div>
+        <div class="crop-head-actions">
+          <span class="ratio-chip">比例 2560 : 1344</span>
+          <button class="btn btn-ghost" id="cropResetBtn" type="button">重置视图</button>
+          <button class="btn btn-primary" id="cropApplyBtn" type="button">
+            应用裁切
+            <svg viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="m4 9 3.3 3.4L14 5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <div class="crop-workspace">
+        <div class="crop-viewport" id="cropViewport">
+          <img id="cropImage" alt="待裁切图片" draggable="false" />
+          <div class="crop-frame" id="cropFrame" aria-hidden="true">
+            <span class="crop-corner tl"></span>
+            <span class="crop-corner tr"></span>
+            <span class="crop-corner bl"></span>
+            <span class="crop-corner br"></span>
+            <span class="crop-grid-line v1"></span>
+            <span class="crop-grid-line v2"></span>
+            <span class="crop-grid-line h1"></span>
+            <span class="crop-grid-line h2"></span>
+            <span class="crop-frame-size" id="cropFrameSize">2560 × 1344</span>
+          </div>
+          <div class="crop-viewhint">
+            <svg viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M9 2.5v13M2.5 9h13" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><circle cx="9" cy="9" r="6.2" stroke="currentColor" stroke-width="1.2"/></svg>
+            拖动画面改变裁切位置 · 滚轮缩放
+          </div>
+        </div>
+      </div>
+
+      <footer class="crop-foot">
+        <div class="crop-output">
+          <span class="crop-output-label">OUTPUT</span>
+          <strong>2560 <em>×</em> 1344 px</strong>
+          <span class="crop-output-sep">/</span>
+          <span id="cropSourceInfo">从原图取景</span>
+        </div>
+        <div class="zoom-control">
+          <button class="zoom-btn" id="cropZoomOut" type="button" aria-label="缩小">−</button>
+          <input type="range" id="cropZoom" min="0" max="300" step="1" value="0" aria-label="裁切缩放" />
+          <button class="zoom-btn" id="cropZoomIn" type="button" aria-label="放大">+</button>
+          <span class="zoom-value" id="cropZoomValue">100%</span>
+        </div>
+      </footer>
+    </div>
+  </div>
+
+  <div class="modal busy-modal" id="busyModal" aria-hidden="true">
+    <div class="busy-card" role="status" aria-live="polite">
+      <div class="busy-mark">
+        <span class="busy-ring"></span>
+        <span class="busy-inner">KH</span>
+      </div>
+      <span class="eyebrow" id="busyEyebrow">RENDERING</span>
+      <h2 id="busyTitle">正在生成图片</h2>
+      <p id="busyStatus">准备画布…</p>
+      <div class="progress-track"><span id="busyProgress"></span></div>
+      <small>请在完成后查看浏览器下载</small>
+    </div>
+  </div>
+
+  <div class="toast-stack" id="toastStack" aria-live="polite" aria-atomic="false"></div>
+
+  <input type="file" id="fontInput" accept=".ttf,.otf,.woff,.woff2,font/ttf,font/otf,font/woff,font/woff2" hidden />
+
+  <noscript>
+    <div class="noscript">此编辑器需要启用 JavaScript 才能使用。</div>
+  </noscript>
+
+  <script src="./vendor/ag-psd.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
