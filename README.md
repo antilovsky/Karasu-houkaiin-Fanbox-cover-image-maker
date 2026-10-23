@@ -24,6 +24,21 @@ python -m http.server 8765 --bind 127.0.0.1
 
 > 请通过本地服务器访问，不要直接双击 `index.html`。浏览器对 `file://` 下的图片与 Canvas 有安全限制，会导致 PNG / PSD 导出失败。
 
+## 在线访问：托管到 GitHub Pages
+
+本仓库是纯静态站点，不需要构建，推荐用 **Deploy from a branch** 方式发布：
+
+1. 打开仓库的 **[Settings → Pages](https://github.com/antilovsky/Karasu-houkaiin-Fanbox-cover-image-maker/settings/pages)**。
+2. 在 **Build and deployment → Source** 中选择 **Deploy from a branch**。
+3. **Branch** 选择 `main`，目录选择 `/ (root)`，点击 **Save**。
+4. 等待约 1–2 分钟。Pages 页面会显示站点地址，通常为：
+   <https://antilovsky.github.io/Karasu-houkaiin-Fanbox-cover-image-maker/>
+5. 打开该地址即可在线使用。之后每次推送到 `main`，站点会自动重新发布。
+
+仓库中包含 `.nojekyll`，GitHub Pages 会按原始静态文件发布，不经过 Jekyll 处理；字体、图片、`vendor/ag-psd.js` 和下载字体链接都可以通过 GitHub Pages 的子路径正常加载。
+
+如果首次打开返回 404，请等待 Pages 部署完成；仍无法访问时，可在 **Actions** 中查看失败原因。
+
 ## 功能
 
 ### 画布与裁切
