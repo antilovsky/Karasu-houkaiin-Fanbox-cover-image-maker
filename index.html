@@ -7,7 +7,9 @@
   <meta name="description" content="Karasu Houkaiin · Quick Image Lab — 2560×1344 快速图片编辑器，支持裁切、明度/饱和度/高斯模糊调整、Otsutome 字体 Overlay 混合模式、可选光晕颜色与 PNG/PSD 导出。" />
   <title>Karasu Houkaiin · Quick Image Lab</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230c0908'/%3E%3Cpath d='M17 47V17h7v12l11-12h9L30 30l15 17h-9L24 34v13h-7Z' fill='%23f2eae0'/%3E%3Cpath d='M47 17h5v30h-5z' fill='%23f04d35'/%3E%3C/svg%3E" />
-  <link rel="stylesheet" href="./styles.css" />
+  <link rel="preload" href="./assets/fonts/OtsutomeFont-Bold.woff2?v=20261028b" as="font" type="font/woff2" crossorigin="anonymous" />
+  <link rel="canonical" href="https://antilovsky.github.io/Karasu-houkaiin-Fanbox-cover-image-maker/" />
+  <link rel="stylesheet" href="./styles.css?v=20261028b" />
 </head>
 <body>
   <div class="app" id="app">
@@ -328,7 +330,7 @@
         </div>
 
         <div class="inspector-foot">
-          <span>KARASU HOUKAIIN / R01</span>
+          <span>KARASU HOUKAIIN / R02</span>
           <span class="foot-note">所有渲染均在浏览器本地完成</span>
         </div>
       </aside>
@@ -417,7 +419,7 @@
     <div class="noscript">此编辑器需要启用 JavaScript 才能使用。</div>
   </noscript>
 
-  <script src="./vendor/ag-psd.js"></script>
-  <script src="./app.js"></script>
+  <script src="./vendor/ag-psd.js?v=20261028b"></script>
+  <script src="./app.js?v=20261028b"></script>
 </body>
 </html>

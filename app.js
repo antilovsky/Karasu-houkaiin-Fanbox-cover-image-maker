@@ -10,6 +10,9 @@
   const TARGET_RATIO = TARGET.width / TARGET.height;
   const LINE_HEIGHT = 1.12;
   const TEXT_BLEND_MODE = 'overlay';
+  const BASE_FONT_SPEC = '700 100px "Otsutome_font"';
+  const BASE_FONT_SAMPLE =
+    'Karasu Houkaiin なぜおとなしく死を待てない？ PSDファイル 0123456789';
   const SAMPLE_SRC = './assets/images/sample-artwork.jpg';
   const SAMPLE_NAME = 'sample-artwork.jpg';
 
@@ -1643,22 +1646,60 @@
 
   /* ── Fonts ─────────────────────────────────────────────────── */
 
-  async function waitForBaseFont() {
+  function baseFontAvailable() {
+    return document.fonts.check(BASE_FONT_SPEC, BASE_FONT_SAMPLE);
+  }
+
+  async function ensureBaseFontLoaded() {
     try {
-      await Promise.race([
-        document.fonts.load(
-          '700 100px "Otsutome_font"',
-          'Karasu Houkaiin なぜおとなしく死を待てない？ PSDファイル'
-        ),
-        sleep(9000),
-      ]);
-      await Promise.race([document.fonts.ready, sleep(3000)]);
+      await document.fonts.load(BASE_FONT_SPEC, BASE_FONT_SAMPLE);
+      await document.fonts.ready;
     } catch (error) {
-      console.warn('Otsutome font could not be loaded:', error);
+      console.warn('Otsutome font load request failed:', error);
     }
+
+    if (baseFontAvailable()) return true;
+
+    // Safari/iPadOS sometimes declines the compressed face; TTF is a
+    // slow but reliable fallback that is also shipped with the project.
+    try {
+      const fallbackFace = new FontFace(
+        'Otsutome_font',
+        'url("./assets/fonts/OtsutomeFont-Bold.ttf?v=20261028b") format("truetype")',
+        { style: 'normal', weight: '700' }
+      );
+      await fallbackFace.load();
+      document.fonts.add(fallbackFace);
+      await document.fonts.ready;
+    } catch (error) {
+      console.warn('Otsutome TTF fallback failed:', error);
+    }
+    return baseFontAvailable();
+  }
+
+  function runFontUpgradeBurst(initialFontReady) {
+    // iPadOS can render the first Canvas frame with the fallback face even
+    // after the webfont is loaded. Redraw synchronously several times so the
+    // final frame, hit boxes and exported preview all use Otsutome.
+    const redraw = () => {
+      if (state.initialized) renderPreview();
+    };
+    redraw();
+    window.setTimeout(redraw, 350);
+    window.setTimeout(redraw, 1200);
+    window.setTimeout(() => {
+      redraw();
+      document.documentElement.dataset.font = 'ready';
+      if (!initialFontReady) {
+        toast('Otsutome 字体已载入，画布已更新。', 'success', 2800);
+      }
+    }, 2400);
   }
 
   async function ensureFontsForLayers() {
+    if (state.layers.some((layer) => layer.visible && layer.font === 'otsutome')) {
+      await ensureBaseFontLoaded();
+    }
     const loads = [];
     for (const layer of state.layers) {
       if (!layer.visible) continue;
@@ -1708,7 +1749,10 @@
       refreshAllFontSelects();
       await ensureFontsForLayers();
       updateTextHitBoxes();
-      queuePreview();
+      renderPreview();
+      window.setTimeout(() => {
+        if (state.initialized) renderPreview();
+      }, 300);
       markChanged();
       toast(`字体「${cleanLabel}」已载入并应用到${targetLayer.name}。`, 'success', 3800);
     } catch (error) {
@@ -2218,13 +2262,19 @@
     syncGlowUI();
     syncOverlayStackUI();
     layoutStage();
-    setCanvasLoading(true, '正在载入 Otsutome 字体');
+    document.documentElement.dataset.font = 'loading';
+    setCanvasLoading(true, '正在载入字体与画面');
 
-    await waitForBaseFont();
-    setCanvasLoading(true, '正在显影');
+    // Start the font request immediately and load the artwork in parallel.
+    // Do not block the editor forever on a slow iPad font download; the
+    // watcher below redraws as soon as the face becomes available.
+    const fontTask = ensureBaseFontLoaded();
 
     try {
       const sample = await loadImage(SAMPLE_SRC);
+      await Promise.race([fontTask, sleep(2000)]);
+      const initialFontReady = baseFontAvailable();
+
       await commitSource(
         {
           image: sample,
@@ -2237,17 +2287,40 @@
       initialRenderDone = false;
       queuePreview();
       state.initialized = true;
+
+      const slowFontNotice = window.setTimeout(() => {
+        if (document.documentElement.dataset.font !== 'ready') {
+          toast('Otsutome 字体仍在载入，完成后会自动更新画布。', 'info', 4200);
+        }
+      }, 10000);
+
+      fontTask
+        .then((ready) => {
+          window.clearTimeout(slowFontNotice);
+          if (!ready) {
+            document.documentElement.dataset.font = 'error';
+            toast('Otsutome 字体加载失败，请检查网络后刷新页面。', 'warn', 6000);
+            return;
+          }
+          runFontUpgradeBurst(initialFontReady);
+        })
+        .catch((error) => {
+          window.clearTimeout(slowFontNotice);
+          console.warn('Otsutome font could not be applied:', error);
+          document.documentElement.dataset.font = 'error';
+          toast('Otsutome 字体加载失败，请检查网络后刷新页面。', 'warn', 6000);
+        });
     } catch (error) {
       console.error(error);
       setCanvasLoading(false);
       toast('示例图片未能载入。请通过「导入图片」选择一张图片开始。', 'warn', 6000);
     }
 
-    window.setTimeout(() => {
-      if (state.initialized) {
+    if (state.initialized) {
+      window.setTimeout(() => {
         toast('示例已就绪 · 可直接拖拽文字，或重新裁切画面。', 'success', 3200);
-      }
-    }, 650);
+      }, 650);
+    }
   }
 
   if (document.readyState === 'loading') {

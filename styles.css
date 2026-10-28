@@ -1,6 +1,10 @@
 @font-face {
   font-family: "Otsutome_font";
-  src: url("./assets/fonts/OtsutomeFont-Bold.woff2") format("woff2");
+  src:
+    local("Otsutome_font Bold"),
+    local("Otsutome_font-Bold"),
+    url("./assets/fonts/OtsutomeFont-Bold.woff2?v=20261028b") format("woff2"),
+    url("./assets/fonts/OtsutomeFont-Bold.ttf?v=20261028b") format("truetype");
   font-style: normal;
   font-weight: 700;
   font-display: swap;
@@ -39,6 +43,8 @@
 
 html {
   background: var(--bg);
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 html,
@@ -88,6 +94,7 @@ select,
 input[type="range"],
 .switch {
   -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 button {
@@ -124,6 +131,7 @@ svg {
   display: flex;
   flex-direction: column;
   width: 100%;
+  height: 100vh;
   height: 100dvh;
   min-height: 0;
 }
@@ -578,6 +586,7 @@ svg {
   position: absolute;
   pointer-events: auto;
   cursor: grab;
+  touch-action: none;
   border: 1px solid transparent;
   border-radius: 2px;
   transition: border-color 120ms ease, background 120ms ease;
@@ -854,6 +863,7 @@ svg {
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
   scrollbar-color: #3a2c27 transparent;
 }
@@ -2023,6 +2033,7 @@ input[type="range"]:disabled {
   flex-direction: column;
   width: calc(100vw - 36px);
   max-width: 1540px;
+  height: calc(100vh - 36px);
   height: calc(100dvh - 36px);
   max-height: 960px;
   overflow: hidden;
@@ -2543,6 +2554,7 @@ input[type="range"]:disabled {
 
   .app {
     height: auto;
+    min-height: 100vh;
     min-height: 100dvh;
   }
 
@@ -2626,6 +2638,7 @@ input[type="range"]:disabled {
 
   .crop-dialog {
     width: 100%;
+    height: 100vh;
     height: 100dvh;
     max-height: none;
     border: 0;
@@ -2916,6 +2929,116 @@ input[type="range"]:disabled {
   .glow-hex {
     flex-basis: 42px;
     font-size: 7px;
+  }
+}
+
+@media (min-width: 700px) and (pointer: coarse) {
+  .btn {
+    min-height: 40px;
+    padding-right: 15px;
+    padding-left: 15px;
+  }
+
+  .mini-btn {
+    height: 34px;
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  .switch {
+    width: 38px;
+    height: 22px;
+  }
+
+  .switch-track {
+    width: 38px;
+    height: 22px;
+  }
+
+  .switch-track::after {
+    top: 4px;
+    left: 4px;
+    width: 12px;
+    height: 12px;
+  }
+
+  .switch input:checked + .switch-track::after {
+    transform: translateX(16px);
+  }
+
+  .text-editor,
+  .select-wrap select,
+  .size-input-wrap input {
+    font-size: 16px;
+  }
+
+  .text-editor {
+    min-height: 54px;
+    padding: 10px;
+  }
+
+  .select-wrap select,
+  .size-input-wrap input {
+    height: 40px;
+  }
+
+  .field-grid {
+    grid-template-columns: minmax(0, 1fr) 78px 86px;
+  }
+
+  .range-row {
+    gap: 9px;
+    padding-top: 8px;
+    padding-bottom: 12px;
+  }
+
+  input[type="range"] {
+    height: 24px;
+    touch-action: none;
+  }
+
+  input[type="range"]::-webkit-slider-runnable-track {
+    height: 3px;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    width: 17px;
+    height: 17px;
+    margin-top: -7px;
+  }
+
+  .glow-swatch {
+    flex-basis: 20px;
+    width: 20px;
+    height: 20px;
+  }
+
+  .glow-swatches {
+    gap: 8px;
+  }
+
+  .glow-picker {
+    flex-basis: 21px;
+    width: 21px;
+    height: 21px;
+  }
+
+  .glow-colors {
+    gap: 9px;
+    padding-top: 10px;
+    padding-bottom: 11px;
+  }
+
+  .layer-open-btn {
+    width: 30px;
+    height: 30px;
+  }
+
+  .zoom-btn {
+    flex-basis: 30px;
+    width: 30px;
+    height: 30px;
+    font-size: 15px;
   }
 }
 

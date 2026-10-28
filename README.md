@@ -2,10 +2,15 @@
 
 一个纯前端、浏览器本地运行的快速图片编辑器，用于生成 **2560 × 1344 px** 的图片，并导出 **PNG** 与 **PSD**。
 
+**在线使用：** <https://antilovsky.github.io/Karasu-houkaiin-Fanbox-cover-image-maker/>
+
+> 如果打开后不是本编辑器，请核对地址是否为上面的完整项目路径（注意仓库名大小写与末尾斜杠），并强制刷新一次浏览器缓存。
+
 ![编辑器预览](./docs/preview-desktop.png)
 
 <p align="center">
-  <img src="./docs/preview-mobile.png" width="300" alt="移动端界面">
+  <img src="./docs/preview-ipad.png" width="330" alt="iPad / Safari 界面">
+  <img src="./docs/preview-mobile.png" width="220" alt="移动端界面">
 </p>
 
 ## 快速启动
@@ -37,7 +42,7 @@ python -m http.server 8765 --bind 127.0.0.1
 
 仓库中包含 `.nojekyll`，GitHub Pages 会按原始静态文件发布，不经过 Jekyll 处理；字体、图片、`vendor/ag-psd.js` 和下载字体链接都可以通过 GitHub Pages 的子路径正常加载。
 
-如果首次打开返回 404，请等待 Pages 部署完成；仍无法访问时，可在 **Actions** 中查看失败原因。
+如果首次打开返回 404，请等待 Pages 部署完成；仍无法访问时，可在 **Actions** 中查看失败原因。已部署后更新页面时，GitHub Pages 通常需要 1–3 分钟同步；样式与脚本带有版本参数，刷新即可获取新版本。
 
 ## 功能
 
@@ -78,6 +83,14 @@ python -m http.server 8765 --bind 127.0.0.1
   <img src="./docs/preview-overlay-controls.png" width="80%" alt="Overlay 混合模式与光晕颜色控制">
 </p>
 
+### iPad / Safari 适配
+
+- **Otsutome 字体预加载**，并在字体真正加载完成后自动重绘 Canvas；即使字体在首帧之后才到达，预览、文字选框和导出也会使用正确字体。
+- 为 iOS 的 Canvas 字体延迟补做多次同步重绘，避免 Safari 在字体已加载后仍显示后备衬线字体。
+- 触控设备上按钮、开关、滑块和输入框更大；输入字号不小于 16px，避免 iPad 聚焦输入框时自动放大页面。
+- 同时提供 `100vh` 与 `100dvh`，兼容较旧 iPadOS；文字拖动区域使用 `touch-action: none`，拖动时不会误滚动页面。
+- PNG 导出在 iPadOS Safari 上已验证可用；PSD 使用同一套文件下载流程。
+
 ### 导出
 
 - **PNG**：2560 × 1344，无损 RGB。
@@ -117,6 +130,7 @@ PSD 中的文字图层要求本机安装 **Otsutome Font** 才能继续编辑原
 └─ docs/
    ├─ preview-desktop.png         桌面端界面截图
    ├─ preview-overlay-controls.png Overlay 与光晕颜色控件
+   ├─ preview-ipad.png            iPad / Safari 界面截图
    └─ preview-mobile.png          移动端界面截图
 ```
 
@@ -127,6 +141,7 @@ PSD 中的文字图层要求本机安装 **Otsutome Font** 才能继续编辑原
 - 文字层使用 Canvas 的 `overlay` 混合模式合成；独立叠加画布确保三个文字图层彼此独立，导出 PSD 时对应文字图层的 blend mode 同样为 `overlay`。
 - 预览分辨率为显示宽度的自适应高清渲染；导出固定为 2560 × 1344。
 - PSD 由 [ag-psd](https://github.com/Agamnentzar/ag-psd)（MIT）生成。文字层同时保留栅格化像素与可编辑文字数据；要保留原字体继续编辑，请安装随附的 Otsutome Font。
+- Otsutome 字体通过 `@font-face` 预加载并提供 TTF 后备；页面会在字体加载完成后主动重绘，针对 iPadOS Safari 的 Canvas 字体延迟做了兜底。
 - 所有图片与字体均在本机加载，不上传服务器。
 
 ## 字体版权
