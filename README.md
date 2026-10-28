@@ -141,7 +141,7 @@ PSD 中的文字图层要求本机安装 **Otsutome Font** 才能继续编辑原
 - 文字层使用 Canvas 的 `overlay` 混合模式合成；独立叠加画布确保三个文字图层彼此独立，导出 PSD 时对应文字图层的 blend mode 同样为 `overlay`。
 - 预览分辨率为显示宽度的自适应高清渲染；导出固定为 2560 × 1344。
 - PSD 由 [ag-psd](https://github.com/Agamnentzar/ag-psd)（MIT）生成。文字层同时保留栅格化像素与可编辑文字数据；要保留原字体继续编辑，请安装随附的 Otsutome Font。
-- Otsutome 字体通过 `@font-face` 预加载并提供 TTF 后备；页面会在字体加载完成后主动重绘，针对 iPadOS Safari 的 Canvas 字体延迟做了兜底。
+- Otsutome 字体通过预加载与 `FontFace` API 显式加载（带重试与 TTF 后备）；页面会在字体加载完成后主动重绘，避免 iPadOS Safari 的 CSS 字体失败或 Canvas 首帧字体延迟。
 - 所有图片与字体均在本机加载，不上传服务器。
 
 ## 字体版权

@@ -10,7 +10,10 @@
   const TARGET_RATIO = TARGET.width / TARGET.height;
   const LINE_HEIGHT = 1.12;
   const TEXT_BLEND_MODE = 'overlay';
-  const BASE_FONT_SPEC = '700 100px "Otsutome_font"';
+  const BASE_FONT_FAMILY = 'Otsutome_web';
+  const BASE_FONT_SPEC = `700 100px "${BASE_FONT_FAMILY}"`;
+  const BASE_FONT_WOFF2 = './assets/fonts/OtsutomeFont-Bold.woff2?v=20261028c';
+  const BASE_FONT_TTF = './assets/fonts/OtsutomeFont-Bold.ttf?v=20261028c';
   const BASE_FONT_SAMPLE =
     'Karasu Houkaiin なぜおとなしく死を待てない？ PSDファイル 0123456789';
   const SAMPLE_SRC = './assets/images/sample-artwork.jpg';
@@ -20,7 +23,7 @@
     otsutome: {
       label: 'おつとめフォント / Bold',
       note: '内置',
-      css: '"Otsutome_font"',
+      css: '"Otsutome_web"',
       ps: 'Otsutome_font-Bold',
     },
     sans: {
@@ -1646,35 +1649,72 @@
 
   /* ── Fonts ─────────────────────────────────────────────────── */
 
+  let baseFontLoadPromise = null;
+
   function baseFontAvailable() {
     return document.fonts.check(BASE_FONT_SPEC, BASE_FONT_SAMPLE);
   }
 
-  async function ensureBaseFontLoaded() {
-    try {
-      await document.fonts.load(BASE_FONT_SPEC, BASE_FONT_SAMPLE);
-      await document.fonts.ready;
-    } catch (error) {
-      console.warn('Otsutome font load request failed:', error);
-    }
-
-    if (baseFontAvailable()) return true;
-
-    // Safari/iPadOS sometimes declines the compressed face; TTF is a
-    // slow but reliable fallback that is also shipped with the project.
-    try {
-      const fallbackFace = new FontFace(
-        'Otsutome_font',
-        'url("./assets/fonts/OtsutomeFont-Bold.ttf?v=20261028b") format("truetype")',
-        { style: 'normal', weight: '700' }
+  function withTimeout(promise, timeoutMs, message) {
+    return new Promise((resolve, reject) => {
+      const timer = window.setTimeout(() => reject(new Error(message)), timeoutMs);
+      promise.then(
+        (value) => {
+          window.clearTimeout(timer);
+          resolve(value);
+        },
+        (error) => {
+          window.clearTimeout(timer);
+          reject(error);
+        }
       );
-      await fallbackFace.load();
-      document.fonts.add(fallbackFace);
-      await document.fonts.ready;
-    } catch (error) {
-      console.warn('Otsutome TTF fallback failed:', error);
+    });
+  }
+
+  function retryFontUrl(url, tag) {
+    const separator = url.includes('?') ? '&' : '?';
+    return `${url}${separator}retry=${tag}-${Date.now().toString(36)}`;
+  }
+
+  async function loadBaseFontFace(url, format, timeoutMs) {
+    const face = new FontFace(
+      BASE_FONT_FAMILY,
+      `url("${new URL(url, document.baseURI).href}") format("${format}")`,
+      { style: 'normal', weight: '700' }
+    );
+    await withTimeout(face.load(), timeoutMs, `Otsutome ${format} load timed out`);
+    document.fonts.add(face);
+    if (face.status !== 'loaded') {
+      throw new Error(`Otsutome ${format} face ended in state ${face.status}`);
     }
-    return baseFontAvailable();
+  }
+
+  function ensureBaseFontLoaded() {
+    if (baseFontLoadPromise) return baseFontLoadPromise;
+
+    // Load the face explicitly instead of waiting on a CSS @font-face.
+    // WebKit on iPadOS can mark a CSS font face as errored on a slow network
+    // and then leave document.fonts.ready pending forever. A FontFace load
+    // has a clear success/failure state and can be retried safely.
+    baseFontLoadPromise = (async () => {
+      const attempts = [
+        { url: BASE_FONT_WOFF2, format: 'woff2', timeout: 25000 },
+        { url: retryFontUrl(BASE_FONT_WOFF2, 'woff2'), format: 'woff2', timeout: 25000 },
+        { url: retryFontUrl(BASE_FONT_TTF, 'ttf'), format: 'truetype', timeout: 30000 },
+      ];
+
+      for (const attempt of attempts) {
+        try {
+          await loadBaseFontFace(attempt.url, attempt.format, attempt.timeout);
+          return true;
+        } catch (error) {
+          console.warn(`Otsutome ${attempt.format} attempt failed:`, error);
+        }
+      }
+      return false;
+    })();
+
+    return baseFontLoadPromise;
   }
 
   function runFontUpgradeBurst(initialFontReady) {
