@@ -1,0 +1,30 @@
+KH Display Web / KH Display Joyo — web font subsets
+====================================================
+
+These files are modified versions of Otsutome Font Bold:
+
+  Copyright (c) 2016-2026, Nanigashitei
+  with Reserved Font Name Otsutome.
+
+The original font is licensed under the SIL Open Font License, Version 1.1
+(see OFL.txt in this directory). The original font and its reserved name
+"Otsutome" belong to the copyright holder.
+
+The web files here were created by subsetting the original font for faster
+browser loading and renaming the derived fonts to "KH Display Web" and
+"KH Display Joyo" in order to comply with the SIL OFL reserved-font-name
+requirement. They remain under the SIL Open Font License, Version 1.1.
+
+  KHDisplayWeb.woff2    ASCII, Latin-1, kana, punctuation and the
+                        handful of kanji used by the default composition.
+  KHDisplayJoyo.woff2   The 2,136 Jōyō kanji, loaded in the background
+                        so common Japanese text can be edited.
+
+The full, unmodified font remains available for PSD editing and for users who
+need complete glyph coverage:
+
+  OtsutomeFont-Bold.ttf
+  OtsutomeFont-Bold.woff2
+  OFL.txt
+
+Subsets generated 2026-10-28.

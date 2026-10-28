@@ -85,7 +85,8 @@ python -m http.server 8765 --bind 127.0.0.1
 
 ### iPad / Safari 适配
 
-- **Otsutome 字体预加载**，并在字体真正加载完成后自动重绘 Canvas；即使字体在首帧之后才到达，预览、文字选框和导出也会使用正确字体。
+- **Otsutome 字体核心子集预加载**，并在字体真正加载完成后自动重绘 Canvas；即使字体在首帧之后才到达，预览、文字选框和导出也会使用正确字体。
+- 2136 个常用汉字（Jōyō）作为后台扩展加载，不会阻塞首屏；默认画面所需的假名、拉丁字符和汉字都在核心子集内。
 - 为 iOS 的 Canvas 字体延迟补做多次同步重绘，避免 Safari 在字体已加载后仍显示后备衬线字体。
 - 触控设备上按钮、开关、滑块和输入框更大；输入字号不小于 16px，避免 iPad 聚焦输入框时自动放大页面。
 - 同时提供 `100vh` 与 `100dvh`，兼容较旧 iPadOS；文字拖动区域使用 `touch-action: none`，拖动时不会误滚动页面。
@@ -122,8 +123,11 @@ PSD 中的文字图层要求本机安装 **Otsutome Font** 才能继续编辑原
 │  └─ ag-psd.js                PSD 读写库（浏览器 bundle，MIT）
 ├─ assets/
 │  ├─ fonts/
-│  │  ├─ OtsutomeFont-Bold.woff2   页面用 Web Font
-│  │  ├─ OtsutomeFont-Bold.ttf     供 PSD 编辑安装
+│  │  ├─ OtsutomeFont-Bold.woff2   原版 Web Font
+│  │  ├─ OtsutomeFont-Bold.ttf     完整字体，供下载与 PSD 编辑安装
+│  │  ├─ KHDisplayWeb.woff2        网页核心子集（默认画面所需字符）
+│  │  ├─ KHDisplayJoyo.woff2       网页常用汉字扩展子集（2136 字）
+│  │  ├─ KHDisplay-NOTICE.txt      子集改名与 OFL 说明
 │  │  └─ OFL.txt                   SIL Open Font License 1.1
 │  └─ images/
 │     └─ sample-artwork.jpg        示例无字底图
@@ -141,12 +145,21 @@ PSD 中的文字图层要求本机安装 **Otsutome Font** 才能继续编辑原
 - 文字层使用 Canvas 的 `overlay` 混合模式合成；独立叠加画布确保三个文字图层彼此独立，导出 PSD 时对应文字图层的 blend mode 同样为 `overlay`。
 - 预览分辨率为显示宽度的自适应高清渲染；导出固定为 2560 × 1344。
 - PSD 由 [ag-psd](https://github.com/Agamnentzar/ag-psd)（MIT）生成。文字层同时保留栅格化像素与可编辑文字数据；要保留原字体继续编辑，请安装随附的 Otsutome Font。
-- Otsutome 字体通过预加载与 `FontFace` API 显式加载（带重试与 TTF 后备）；页面会在字体加载完成后主动重绘，避免 iPadOS Safari 的 CSS 字体失败或 Canvas 首帧字体延迟。
+- Otsutome 字体通过 `FontFace` API 显式加载：先加载 66 KB 的核心子集，再后台加载 854 KB 的常用汉字扩展；页面会在字体加载完成后主动重绘，避免 iPadOS Safari 的 CSS 字体失败或 Canvas 首帧字体延迟。
 - 所有图片与字体均在本机加载，不上传服务器。
 
 ## 字体版权
 
 Otsutome Font（おつとめフォント）由 **何某亭** 设计，按 **SIL Open Font License 1.1** 发布。字体可免费用于个人与商业作品；再分发时请保留 `assets/fonts/OFL.txt`。
+
+这个网页为了在 iPad、移动网络和 GitHub Pages 上快速显示，使用了两个由 Otsutome 生成的 WOFF2 子集。OFL 声明了保留字体名 **Otsutome**，因此子集已按许可证要求改名为 **KH Display Web / KH Display Joyo**，并保留 OFL 授权与原始版权说明：
+
+- **KHDisplayWeb.woff2**：ASCII、拉丁字符、假名、标点与默认画面使用的汉字，约 66 KB，首屏立即加载。
+- **KHDisplayJoyo.woff2**：2136 个常用汉字（Jōyō），约 854 KB，在后台加载，用于编辑常用日文；默认画面不依赖它。
+- 完整未修改字体仍是 `OtsutomeFont-Bold.ttf`，页面底部的「下载字体」提供该文件；PSD 文字层也引用原始字体名 `Otsutome_font-Bold`。
+- 网页子集只覆盖常用字形；如需生僻字或完整字符集，请上传完整字体文件，或下载安装完整 TTF 后在 PSD 中编辑。
+
+完整说明见 `assets/fonts/KHDisplay-NOTICE.txt`。
 
 - 作者页面：<https://font.sleepcows.com/>
 - 授权协议：<https://openfontlicense.org/open-font-license-official-text/>

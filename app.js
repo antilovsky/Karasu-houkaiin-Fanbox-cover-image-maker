@@ -10,10 +10,11 @@
   const TARGET_RATIO = TARGET.width / TARGET.height;
   const LINE_HEIGHT = 1.12;
   const TEXT_BLEND_MODE = 'overlay';
-  const BASE_FONT_FAMILY = 'Otsutome_web';
+  const BASE_FONT_FAMILY = 'KHDisplayWeb';
   const BASE_FONT_SPEC = `700 100px "${BASE_FONT_FAMILY}"`;
-  const BASE_FONT_WOFF2 = './assets/fonts/OtsutomeFont-Bold.woff2?v=20261028c';
-  const BASE_FONT_TTF = './assets/fonts/OtsutomeFont-Bold.ttf?v=20261028c';
+  const BASE_FONT_WOFF2 = './assets/fonts/KHDisplayWeb.woff2?v=20261028d';
+  const JOYO_FONT_FAMILY = 'KHDisplayJoyo';
+  const JOYO_FONT_WOFF2 = './assets/fonts/KHDisplayJoyo.woff2?v=20261028d';
   const BASE_FONT_SAMPLE =
     'Karasu Houkaiin なぜおとなしく死を待てない？ PSDファイル 0123456789';
   const SAMPLE_SRC = './assets/images/sample-artwork.jpg';
@@ -23,7 +24,7 @@
     otsutome: {
       label: 'おつとめフォント / Bold',
       note: '内置',
-      css: '"Otsutome_web"',
+      css: '"KHDisplayWeb", "KHDisplayJoyo"',
       ps: 'Otsutome_font-Bold',
     },
     sans: {
@@ -1650,6 +1651,7 @@
   /* ── Fonts ─────────────────────────────────────────────────── */
 
   let baseFontLoadPromise = null;
+  let joyoFontLoadPromise = null;
 
   function baseFontAvailable() {
     return document.fonts.check(BASE_FONT_SPEC, BASE_FONT_SAMPLE);
@@ -1676,16 +1678,16 @@
     return `${url}${separator}retry=${tag}-${Date.now().toString(36)}`;
   }
 
-  async function loadBaseFontFace(url, format, timeoutMs) {
+  async function loadBaseFontFace(family, url, timeoutMs) {
     const face = new FontFace(
-      BASE_FONT_FAMILY,
-      `url("${new URL(url, document.baseURI).href}") format("${format}")`,
+      family,
+      `url("${new URL(url, document.baseURI).href}") format("woff2")`,
       { style: 'normal', weight: '700' }
     );
-    await withTimeout(face.load(), timeoutMs, `Otsutome ${format} load timed out`);
+    await withTimeout(face.load(), timeoutMs, `${family} load timed out`);
     document.fonts.add(face);
     if (face.status !== 'loaded') {
-      throw new Error(`Otsutome ${format} face ended in state ${face.status}`);
+      throw new Error(`${family} face ended in state ${face.status}`);
     }
   }
 
@@ -1693,28 +1695,68 @@
     if (baseFontLoadPromise) return baseFontLoadPromise;
 
     // Load the face explicitly instead of waiting on a CSS @font-face.
-    // WebKit on iPadOS can mark a CSS font face as errored on a slow network
-    // and then leave document.fonts.ready pending forever. A FontFace load
-    // has a clear success/failure state and can be retried safely.
+    // WebKit on iPadOS can mark a font face as errored on a slow network
+    // and then leave document.fonts.ready pending forever. The core subset is
+    // tiny, so the editor gets the correct display face immediately.
     baseFontLoadPromise = (async () => {
       const attempts = [
-        { url: BASE_FONT_WOFF2, format: 'woff2', timeout: 25000 },
-        { url: retryFontUrl(BASE_FONT_WOFF2, 'woff2'), format: 'woff2', timeout: 25000 },
-        { url: retryFontUrl(BASE_FONT_TTF, 'ttf'), format: 'truetype', timeout: 30000 },
+        { url: BASE_FONT_WOFF2, timeout: 15000 },
+        { url: retryFontUrl(BASE_FONT_WOFF2, 'core'), timeout: 15000 },
       ];
 
       for (const attempt of attempts) {
         try {
-          await loadBaseFontFace(attempt.url, attempt.format, attempt.timeout);
+          await loadBaseFontFace(BASE_FONT_FAMILY, attempt.url, attempt.timeout);
           return true;
         } catch (error) {
-          console.warn(`Otsutome ${attempt.format} attempt failed:`, error);
+          console.warn('Otsutome core subset attempt failed:', error);
         }
       }
       return false;
     })();
 
     return baseFontLoadPromise;
+  }
+
+  function runFontExtensionBurst() {
+    const redraw = () => {
+      if (state.initialized) renderPreview();
+    };
+    redraw();
+    window.setTimeout(redraw, 400);
+    window.setTimeout(() => {
+      redraw();
+      document.documentElement.dataset.joyo = 'ready';
+    }, 1200);
+  }
+
+  function ensureJoyoFontLoaded() {
+    if (joyoFontLoadPromise) return joyoFontLoadPromise;
+    document.documentElement.dataset.joyo = 'loading';
+
+    // The 2,136 Jōyō kanji extension is loaded in the background. The core
+    // face already covers the supplied composition, so a slow extension never
+    // blocks the editor or its font.
+    joyoFontLoadPromise = (async () => {
+      const attempts = [
+        { url: JOYO_FONT_WOFF2, timeout: 45000 },
+        { url: retryFontUrl(JOYO_FONT_WOFF2, 'joyo'), timeout: 45000 },
+      ];
+
+      for (const attempt of attempts) {
+        try {
+          await loadBaseFontFace(JOYO_FONT_FAMILY, attempt.url, attempt.timeout);
+          runFontExtensionBurst();
+          return true;
+        } catch (error) {
+          console.warn('Otsutome Jōyō subset attempt failed:', error);
+        }
+      }
+      document.documentElement.dataset.joyo = 'error';
+      return false;
+    })();
+
+    return joyoFontLoadPromise;
   }
 
   function runFontUpgradeBurst(initialFontReady) {
@@ -2327,6 +2369,12 @@
       initialRenderDone = false;
       queuePreview();
       state.initialized = true;
+
+      // Wait until the image has rendered before pulling the optional kanji
+      // extension, keeping bandwidth for the core font and sample artwork.
+      window.setTimeout(() => {
+        if (state.initialized) void ensureJoyoFontLoaded();
+      }, 2500);
 
       const slowFontNotice = window.setTimeout(() => {
         if (document.documentElement.dataset.font !== 'ready') {
